@@ -1,0 +1,474 @@
+-- ===========================================
+-- 系统参数
+--
+CREATE TABLE IF NOT EXISTS `system_configs` (
+	`id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+	`name` VARCHAR (100) NOT NULL COMMENT '键',
+	`value` VARCHAR (5000) DEFAULT NULL COMMENT '值',
+	`comment` VARCHAR (500) DEFAULT NULL COMMENT '备注',
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `uk_system_configs_name` (`name`)
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 系统用户
+-- 
+CREATE TABLE IF NOT EXISTS `system_user` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+    `username` VARCHAR ( 128 ) NOT NULL COMMENT '用户名',
+    `password` VARCHAR ( 100 ) NOT NULL DEFAULT '' COMMENT '密码',
+    `display` VARCHAR ( 128 ) NOT NULL COMMENT '姓名',
+    `mail_address` VARCHAR ( 128 ) NOT NULL COMMENT '邮箱',
+    `title` VARCHAR ( 128 ) DEFAULT NULL COMMENT '职务',
+    `department` VARCHAR ( 128 ) DEFAULT NULL COMMENT '部门',
+    `telphone` VARCHAR ( 16 ) DEFAULT NULL COMMENT '座机号',
+    `mobile` VARCHAR ( 16 ) DEFAULT NULL COMMENT '手机号',
+    `manager` BIGINT ( 20 )  COMMENT '直属领导',
+    `state_form_status` VARCHAR ( 16 ) NOT NULL DEFAULT 'enabled' COMMENT '状态: enabled - 有效, disabled - 禁用',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '1',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_user_username` ( `username` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 废弃的用户令牌
+-- 
+CREATE TABLE IF NOT EXISTS `system_token_discard` (
+    `discard_token` VARCHAR ( 100 ) NOT NULL,
+    `expiration_time` BIGINT ( 20 ) NOT NULL COMMENT '有效期',
+    PRIMARY KEY ( `discard_token` ),
+    UNIQUE KEY `uk_system_discard_token` ( `discard_token` ),
+    KEY `idx_expiration_time` ( `expiration_time` )
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 系统角色
+-- 
+CREATE TABLE IF NOT EXISTS `system_role` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+    `code` VARCHAR ( 50 ) NOT NULL COMMENT '代码',
+    `name` VARCHAR ( 100 ) NOT NULL COMMENT '名称',
+    `description` VARCHAR ( 100 ) DEFAULT NULL COMMENT '备注',
+    `state_form_status` VARCHAR ( 32 ) NOT NULL DEFAULT 'enabled',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_role_code` ( `code` ),
+    UNIQUE KEY `uk_system_role_name` ( `name` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 角色功能
+-- 
+CREATE TABLE IF NOT EXISTS `system_role_feature` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `role_id` BIGINT ( 20 ) NOT NULL,
+    `feature_id` BIGINT ( 20 ) NOT NULL,
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_feature_rolse` ( `feature_id`, `role_id` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ============================================
+-- 初始化基本角色和管理员角色
+INSERT IGNORE INTO system_role (`code`, `name`, `description`)
+VALUES ('basic', '基础角色', '该角色仅具备基础授权，浏览授权范围的基础信息'),
+       ('admin', '管理角色', '该角色仅具备特别授权，具备授权范围的最大权限');
+
+-- ===========================================
+-- 用户授权信息
+-- 
+CREATE TABLE IF NOT EXISTS `system_user_scope_role` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT ( 20 ) NOT NULL COMMENT '用户ID',
+    `scope_type` VARCHAR ( 20 ) NOT NULL COMMENT '用户授权范围：System , Productline , Subsystem , Guest',
+    `scope_id` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '授权标的的主键，当授权范围为 System 或 Guest时值为0',
+    `role_id` BIGINT ( 20 ) NOT NULL COMMENT '用户授权范围角色ID，如果授权为System或Guest，则role_id可为null',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_user_scope_role` ( `user_id`, `scope_type`, `scope_id`, `role_id` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 系统功能
+-- 
+CREATE TABLE IF NOT EXISTS `system_feature` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `code` VARCHAR ( 64 ) NOT NULL COMMENT '标识码',
+    `name` VARCHAR ( 128 ) NOT NULL COMMENT '名称',
+    `description` VARCHAR ( 255 ) NOT NULL COMMENT '描述',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `created_by` VARCHAR( 128 ) NOT NULL COMMENT '创建人姓名',
+    `state_form_status` VARCHAR ( 32 ) NOT NULL DEFAULT 'enabled' COMMENT '状态',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '版本',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_feature_code` ( `code` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+CREATE TABLE IF NOT EXISTS `system_feature_auth` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `feature_id` BIGINT ( 20 ) NOT NULL,
+    `auth_key` VARCHAR(180) NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_system_feature_auth` (`feature_id`,`auth_key`)
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 初始化基本基础功能及授权信息
+--
+INSERT IGNORE INTO system_feature (`code`, `name`, `description`) VALUES 
+    ('system_basic_feature', '系统基础功能集', '包含系统最基础的系统功能集，需确保所有登录用户均可使用');
+INSERT IGNORE INTO system_feature_auth (`feature_id`, `auth_key`)
+    SELECT f.id, '/api/user/logout' FROM system_feature f WHERE f.code = 'system_basic_feature';
+INSERT IGNORE INTO system_feature_auth (`feature_id`, `auth_key`)
+    SELECT f.id, '/api/user/menus' FROM system_feature f WHERE f.code = 'system_basic_feature';
+INSERT IGNORE INTO system_feature_auth (`feature_id`, `auth_key`)
+    SELECT f.id, '/api/user/todo/opened/list' FROM system_feature f WHERE f.code = 'system_basic_feature';
+INSERT IGNORE INTO system_feature_auth (`feature_id`, `auth_key`)
+    SELECT f.id, '/api/user/todo/opened/total' FROM system_feature f WHERE f.code = 'system_basic_feature';
+INSERT IGNORE INTO system_role_feature (`feature_id`, `role_id`)
+    SELECT f.id, r.id FROM system_feature f, system_role r WHERE r.code = 'basic' AND f.code = 'system_basic_feature';
+
+-- ===========================================
+-- 系统注册接口
+-- 
+CREATE TABLE IF NOT EXISTS `system_interfaze` (
+    `auth`  VARCHAR ( 180 ) NOT NULL COMMENT '接口标识',
+    `scope_type` VARCHAR ( 64 )  NOT NULL COMMENT '授权类型',
+    `request_methods` VARCHAR ( 64 )  NOT NULL COMMENT '请求方式',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `deleted_at` TIMESTAMP NULL DEFAULT NULL COMMENT '删除时间，有值则意味着已被删除',
+    PRIMARY KEY ( `auth` )
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 系统菜单
+-- 
+CREATE TABLE IF NOT EXISTS `system_menu` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `dir_id` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '所属目录',
+    `name` VARCHAR ( 20 ) NOT NULL DEFAULT '' COMMENT '菜单名称',
+    `path` VARCHAR ( 200 ) NOT NULL DEFAULT '' COMMENT '菜单路径',
+    `icon` VARCHAR ( 20 ) NOT NULL DEFAULT '' COMMENT '菜单图标',
+    `order` TINYINT ( 3 ) UNSIGNED NOT NULL DEFAULT '0' COMMENT '菜单排序',
+    `state_form_status` VARCHAR ( 32 ) NOT NULL DEFAULT 'enabled',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_menu_name` ( `name` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+CREATE TABLE IF NOT EXISTS `system_menu_auth` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `menu_id` BIGINT ( 20 ) NOT NULL COMMENT '菜单',
+    `auth_key` VARCHAR ( 180 ) NOT NULL COMMENT '权限',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_menu_auth` ( `menu_id`, `auth_key` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+CREATE TABLE IF NOT EXISTS `system_menu_dir` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR ( 20 ) NOT NULL COMMENT '目录名称',
+    `path` VARCHAR ( 200 ) NOT NULL DEFAULT '' COMMENT '目录路径',
+    `icon` VARCHAR ( 20 ) NOT NULL DEFAULT '' COMMENT '目录图标',
+    `pane_id` BIGINT ( 20 ) NOT NULL COMMENT '所属导航',
+    `order` TINYINT ( 3 ) UNSIGNED NOT NULL DEFAULT '0' COMMENT '目录排序',
+    `state_form_status` VARCHAR ( 32 ) NOT NULL DEFAULT 'enabled',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_meun_dir_name` ( `name` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+CREATE TABLE IF NOT EXISTS `system_menu_pane` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR ( 20 ) NOT NULL COMMENT '导航名称',
+    `path` VARCHAR ( 200 ) NOT NULL DEFAULT '' COMMENT '导航路径',
+    `icon` VARCHAR ( 20 ) NOT NULL DEFAULT '' COMMENT '导航图标',
+    `order` TINYINT ( 3 ) UNSIGNED DEFAULT '0' COMMENT '导航排序',
+    `state_form_status` VARCHAR ( 32 ) NOT NULL DEFAULT 'enabled',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_menu_pane_name` ( `name` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 标准化的附件信息
+-- 
+CREATE TABLE IF NOT EXISTS `system_common_attachment` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+    `type` VARCHAR ( 128 ) NOT NULL COMMENT '附件类型，用于标记某一类型的附件，便于检索、区分、清理等用途',
+    `name` VARCHAR ( 128 ) NOT NULL COMMENT '文件名称',
+    `path` VARCHAR ( 256 ) NOT NULL COMMENT '存储地址',
+    `field` VARCHAR ( 128 ) NOT NULL COMMENT '附件对应流程表单的字段名称',
+    `size` BIGINT ( 20 ) NOT NULL COMMENT '文件的大小',
+    `content_type` VARCHAR ( 128 ) NOT NULL COMMENT '文件类型',
+    `created_user_id` BIGINT ( 20 ) NOT NULL COMMENT '创建人编号',
+    `created_user_name` VARCHAR ( 128 ) NOT NULL COMMENT '创建人代码',
+    `created_user_display` VARCHAR ( 128 ) NOT NULL COMMENT '创建人名称',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY ( `id` ),
+    KEY `uk_system_common_attachment_type` ( `type` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 标准化的分布任务锁
+-- 
+CREATE TABLE IF NOT EXISTS `system_common_lock` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+    `object_type` VARCHAR ( 128 ) NOT NULL COMMENT '锁目标的类型',
+    `object_id`   VARCHAR ( 128 ) NOT NULL COMMENT '锁目标的主键',
+    `locked` TINYINT ( 1 ) DEFAULT NULL COMMENT '锁状态： null - 已释放，non-null - 锁定中',
+    `title` VARCHAR ( 128 ) NOT NULL COMMENT '锁标题：通常用于描述锁的用途',
+    `result` TINYINT ( 1 ) DEFAULT NULL COMMENT '执行结果：null - 结果待定，0 - 执行失败， 1 - 执行成功',
+    `logfile` VARCHAR ( 200 ) DEFAULT NULL COMMENT '日志地址，用于记录任务的过程日志信息',
+    `state`  VARCHAR ( 20 ) NOT NULL COMMENT '任务状态： created - 等待中，started - 运行中，released - 已结束',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `created_user_id` VARCHAR ( 128 ) DEFAULT NULL COMMENT '创建者编号',
+    `created_user_name` VARCHAR ( 128 ) DEFAULT NULL COMMENT '创建者姓名',
+    `running_at` TIMESTAMP NULL DEFAULT NULL COMMENT '任务启动时间',
+    `unlocked_at` TIMESTAMP NULL DEFAULT NULL COMMENT '释放时间',
+    `unlocked_user_id` VARCHAR ( 128 ) DEFAULT NULL COMMENT '释放者编号',
+    `unlocked_user_name` VARCHAR ( 128 ) DEFAULT NULL COMMENT '释放者姓名',
+    `timeout_seconds` INT ( 10 ) DEFAULT NULL COMMENT '超时时间，单位秒',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_object_type_id` ( `object_type`, `object_id`, `locked` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+CREATE TABLE IF NOT EXISTS `system_common_lock_data` (
+    `task_id` BIGINT ( 20 ) NOT NULL COMMENT '任务编号',
+    `result_data` TEXT NULL COMMENT  '任务结果数据',
+    PRIMARY KEY ( `task_id` )
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 标准化的用户操作日志
+-- 
+CREATE TABLE IF NOT EXISTS `system_common_log` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `object_type` VARCHAR ( 100 ) NOT NULL COMMENT '操作对象类型',
+    `object_id` VARCHAR ( 100 ) NOT NULL COMMENT '操作对象主键',
+    `operate_user_id` VARCHAR ( 128 ) NOT NULL COMMENT '操作人主键',
+    `operate_user_name` VARCHAR ( 128 ) NOT NULL COMMENT '操作人代码',
+    `operate_user_display` VARCHAR ( 128 ) NOT NULL COMMENT '操作人姓名',
+    `operate_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    `operate_type` VARCHAR ( 50 ) DEFAULT NULL COMMENT '操作类型',
+    `operate_desc` VARCHAR ( 1024 ) DEFAULT NULL COMMENT '操作描述',
+    `operate_detail_id` BIGINT ( 20 ) DEFAULT NULL COMMENT '操作详情',
+    `operate_proxy_name` VARCHAR ( 128 ) DEFAULT NULL COMMENT '代理操作人账户',
+    `operate_proxy_display` VARCHAR ( 128 ) DEFAULT NULL COMMENT '代理操作人姓名',
+    PRIMARY KEY ( `id` ),
+    KEY `idx_operate_time` ( `operate_time` ),
+    KEY `idx_object_type_id` ( `object_type`, `object_id` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+CREATE TABLE IF NOT EXISTS `system_common_log_detail` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `operate_before` LONGTEXT COMMENT '操作前对象',
+    `operate_after`  LONGTEXT COMMENT '操作后对象',
+    PRIMARY KEY ( `id` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 待办事项清单
+-- 
+CREATE TABLE IF NOT EXISTS `system_common_todo` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `title` VARCHAR ( 128 ) NOT NULL COMMENT '事项标题',
+    `category` VARCHAR ( 128 ) NOT NULL COMMENT '待办事项的流程单类型',
+    `target_key` VARCHAR ( 64 ) NOT NULL COMMENT '待办事项的流程环节，与 target_id 组合起来为待办事项的唯一键',
+    `target_id` VARCHAR ( 64 ) NOT NULL COMMENT '待办事项流程单编号',
+    `target_page` VARCHAR ( 256 ) NOT NULL COMMENT '待办事项的详情页地址',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建操作时间',
+    `created_user_id` BIGINT ( 20 ) NOT NULL COMMENT '创建人编号',
+    `created_user_name` VARCHAR ( 128 ) NOT NULL COMMENT '操作人账户',
+    `created_user_display` VARCHAR ( 128 ) NOT NULL COMMENT '操作人姓名',
+    `closed_at` TIMESTAMP NULL DEFAULT NULL COMMENT '处理时间',
+    `closed_user_id` BIGINT ( 20 ) DEFAULT NULL COMMENT '处理人编号',
+    `closed_user_name` VARCHAR ( 128 ) DEFAULT NULL COMMENT '处理人账户',
+    `closed_user_display` VARCHAR ( 128 ) DEFAULT NULL COMMENT '处理人姓名',
+    `result` VARCHAR ( 128 ) DEFAULT NULL COMMENT '处理的结果',
+    `state_form_status` CHAR ( 1 ) NOT NULL DEFAULT '0' COMMENT '待办事项的状态： 0 - 待办理， 1 - 已办理',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '状态版本',
+    PRIMARY KEY ( `id` ),
+    KEY `idx_system_common_todo_key_id` ( `target_key`, `target_id` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+CREATE TABLE IF NOT EXISTS `system_common_todo_assignee` (
+`id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+`todo_id` BIGINT ( 20 ) NOT NULL COMMENT '待办事项的编号',
+`todo_user` BIGINT ( 20 ) NOT NULL COMMENT '分配的处理用户',
+PRIMARY KEY ( `id` ),
+UNIQUE KEY `uk_system_todo_assignee` ( `todo_id`, `todo_user` ),
+KEY `idx_todo_id` ( `todo_id` )
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 系统通知模板及通知记录
+-- 
+CREATE TABLE IF NOT EXISTS `system_notify_template` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `code` VARCHAR ( 128 ) NOT NULL COMMENT '通知模板唯一标识',
+    `comment` VARCHAR ( 128 ) COMMENT '通知模板说明',
+    `mail_to` VARCHAR ( 256 ) COMMENT '邮件接收地址',
+    `mail_cc` VARCHAR ( 256 ) COMMENT '邮件抄送地址',
+    `message_to` VARCHAR ( 256 ) COMMENT '短消息接收号码',
+    `mail_content` VARCHAR ( 10240 ) COMMENT '邮件通知内容模板',
+    `message_content` VARCHAR ( 1024 ) COMMENT '短消息通知内容模板',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `created_by` BIGINT ( 20 ) NOT NULL COMMENT '创建人编号',
+    `created_code_by` VARCHAR ( 128 ) NOT NULL COMMENT '创建人账户',
+    `created_name_by` VARCHAR ( 128 ) NOT NULL COMMENT '创建人姓名',
+    `state_form_status` VARCHAR ( 20 ) NOT NULL DEFAULT 'enabled' COMMENT '通知模板状态: enabled - 启动, disabled - 禁用',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '状态版本',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `idx_system_notify_template_code` ( `code`) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+CREATE TABLE IF NOT EXISTS `system_notify_record` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `type` VARCHAR ( 20 ) NOT NULL COMMENT '通知记录类型: email - 邮件, message - 短消息',
+    `message_to` VARCHAR ( 256 ) COMMENT '通知接收邮件地址或手机号码',
+    `message_cc` VARCHAR ( 256 ) COMMENT '通知抄送邮件地址或手机号码',
+    `content`    VARCHAR ( 10240 ) NOT NULL COMMENT '通知内容',
+    `result`     VARCHAR ( 20 )  NOT NULL DEFAULT '' COMMENT '通知发送结果: success - 成功, failure - 失败, skipped - 忽略',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `created_by` BIGINT ( 20 ) NOT NULL COMMENT '创建人编号',
+    `created_code_by` VARCHAR ( 128 ) NOT NULL COMMENT '创建人账户',
+    `created_name_by` VARCHAR ( 128 ) NOT NULL COMMENT '创建人姓名',
+    `state_form_status` VARCHAR ( 20 ) NOT NULL DEFAULT 'created' COMMENT '通知状态: created - 待发送, cancelled - 取消发送, finished - 发送结束',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '状态版本',
+    PRIMARY KEY ( `id` ),
+    KEY `idx_system_notify_record_type` ( `type` ),
+    KEY `idx_system_notify_record_result` ( `result` ),
+    KEY `idx_system_notify_record_created_at` ( `created_at` ),
+    KEY `idx_system_notify_record_created_by` ( `created_by` ),
+    KEY `idx_system_notify_record_status` ( `state_form_status` ),
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 通用流程注册信息
+-- 
+CREATE TABLE IF NOT EXISTS `system_form_defined` (
+	`id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+	`form_name` VARCHAR ( 128 ) NOT NULL COMMENT '流程单名称',
+	`form_service` VARCHAR ( 180 ) NOT NULL COMMENT '流程单服务类',
+	`form_backend` VARCHAR ( 64 ) NOT NULL COMMENT '流程单实体类',
+	`form_display` VARCHAR ( 255 ) DEFAULT NULL,
+	`disabled` TINYINT (1) NOT NULL DEFAULT '0' COMMENT '标记该表单是否失效',
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `uk_form_name` (`form_name`),
+	UNIQUE KEY `uk_form_service` (`form_service`)
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 通用流程界面视图配置
+--
+CREATE TABLE IF NOT EXISTS `system_form_viewattrs` (
+	`id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+	`class_path` VARCHAR (128) NOT NULL COMMENT '界面配置文件',
+	`form_attrs` TEXT COMMENT '界面配置数据',
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `uk_class_path` (`class_path`)
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 通用流程事件注册信息
+--
+CREATE TABLE IF NOT EXISTS `system_form_actions` (
+	`id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+	`form_name` VARCHAR (128) NOT NULL COMMENT '表单名称',
+	`action_name` VARCHAR (128) NOT NULL COMMENT '事件名称',
+	`form_backend` VARCHAR (64) NOT NULL COMMENT '后端服务实例名',
+	`action_key` VARCHAR (190) NOT NULL COMMENT '事件唯一键（<form_name>::<action_name>）',
+	`action_display` VARCHAR (255) NOT NULL COMMENT '显示名',
+	`action_type` VARCHAR (32) NOT NULL DEFAULT '' COMMENT '事件类型',
+	`action_form_type` VARCHAR (16) NOT NULL DEFAULT '' COMMENT '操作界面类型：NULL - 无界面; EDIT - 编辑; VIEW - 视图;',
+	`source_state` VARCHAR (255) DEFAULT NULL COMMENT '操作前的初始状态值',
+	`target_state` VARCHAR (255) DEFAULT NULL COMMENT '操作后的目标状态值',
+	`prepare_required` TINYINT ( 1 ) NOT NULL DEFAULT '0' COMMENT '是否支持操作执行前的数据准备接口',
+	`message_reuqired` TINYINT ( 1 ) DEFAULT 0 COMMENT '是否要求填写操作说明:NULL - 不需要; TRUE - 必填; FALSE - 选填',
+	`comfirm_reuqired` TINYINT ( 1 ) NOT NULL DEFAULT '1' COMMENT '是否在执行操作前做二次确认',
+	`revision_ignored` TINYINT ( 1 ) NOT NULL DEFAULT '0' COMMENT '是否跳过版本自动升级',
+ 	`action_async` TINYINT ( 1 ) NOT NULL DEFAULT '0' COMMENT '是否异步执行',
+	`authority_type` VARCHAR (32) NOT NULL DEFAULT '' COMMENT '授权的范围',
+	`authority_parser` VARCHAR (180) NOT NULL DEFAULT '' COMMENT '授权对象解析器',
+	`authority_cheker` VARCHAR (180) NOT NULL DEFAULT '' COMMENT '特殊授权验证器',
+	`last_updated` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
+	PRIMARY KEY (`id`),
+	UNIQUE KEY `uk_system_form_actions_form_action` (`form_name`, `action_name`),
+	KEY `idx_system_form_actions_form_name` (`form_name`),
+	KEY `idx_idx_system_form_actions_action_key` (`action_key`)
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 通用流程单上添加的额外视图配置类
+--
+CREATE TABLE IF NOT EXISTS `system_form_extraviews` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `form_name` VARCHAR ( 128 ) NOT NULL,
+    `view_name` VARCHAR ( 190 ) NOT NULL,
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_sytem_form_extraview` ( `form_name`, `view_name` ),
+    KEY `idx_form_name` ( `form_name` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 通用流程表单字段上注册的自定义属性清单
+--
+CREATE TABLE IF NOT EXISTS `system_form_fieldattrs` (
+    `id` BIGINT ( 20 ) NOT NULL COMMENT '主键',
+    `name` VARCHAR ( 64 ) NOT NULL COMMENT '名称',
+    `display` VARCHAR ( 64 ) NOT NULL COMMENT '显示',
+    `description` VARCHAR ( 255 ) NOT NULL COMMENT '描述',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_form_field_attr_name` ( `name` )
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 通用流程关联附件清单
+--
+CREATE TABLE IF NOT EXISTS `system_form_attachment` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `form_name` VARCHAR ( 128 ) NOT NULL,
+    `form_id` BIGINT ( 20 ) NOT NULL,
+    `attachment_id` BIGINT ( 20 ) NOT NULL,
+    PRIMARY KEY ( `id` ) 
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 租户基本信息
+-- 
+CREATE TABLE IF NOT EXISTS `system_tenant` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `code` VARCHAR ( 60 ) NOT NULL COMMENT '租户代码',
+    `name` VARCHAR ( 128 ) NOT NULL DEFAULT '' COMMENT '租户名称',
+    `state_form_status` VARCHAR ( 16 ) NOT NULL DEFAULT 'enabled' COMMENT '状态: enabled - 有效, disabled - 禁用',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '1',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_tenant_code` ( `code` )
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 租户数据库连接
+-- 
+CREATE TABLE IF NOT EXISTS `system_tenant_dbinfo` (
+    `tenant_id`  BIGINT ( 20 ) NOT NULL COMMENT '租户',
+    `name` VARCHAR ( 128 ) NOT NULL DEFAULT 'main' COMMENT '数据库类型',
+    `jdbc_driver` VARCHAR ( 128 ) NOT NULL COMMENT 'JDBC驱动器',
+    `jdbc_url` VARCHAR ( 256 ) NOT NULL COMMENT 'JDBC连接地址',
+    `jdbc_user` VARCHAR ( 128 ) NOT NULL DEFAULT '' COMMENT 'JDBC连接账户',
+    `jdbc_token` VARCHAR ( 128 ) NOT NULL DEFAULT '' COMMENT 'JDBC连接密码',
+    PRIMARY KEY (`name`,`tenant_id`),
+    KEY `idx_system_tenant_dbinfo` (`tenant_id`)
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
+-- 租户可用功能清单
+-- 
+CREATE TABLE IF NOT EXISTS `system_tenant_feature` (
+    `tenant_id`   BIGINT ( 20 ) NOT NULL COMMENT '租户',
+    `feature_id`  BIGINT ( 20 ) NOT NULL COMMENT '功能',
+    PRIMARY KEY ( `tenant_id`, `feature_id` )
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- =============================================
+-- 作为租户管理系统，需要以租户为业务系统进行授权管理
+-- 因此，需要创建视图来映射到 system_subsystem 
+--
+CREATE VIEW IF NOT EXISTS system_subsystem AS SELECT `id`, `code`, `name` FROM `system_tenant`;

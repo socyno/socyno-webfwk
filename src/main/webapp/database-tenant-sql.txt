@@ -1,0 +1,382 @@
+
+-- ===========================================
+-- 系统用户
+-- 
+CREATE TABLE `system_user` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+    `username` VARCHAR ( 128 ) NOT NULL COMMENT '用户名',
+    `password` VARCHAR ( 100 ) NOT NULL DEFAULT '' COMMENT '密码',
+    `display` VARCHAR ( 128 ) NOT NULL COMMENT '姓名',
+    `mail_address` VARCHAR ( 128 ) NOT NULL COMMENT '邮箱',
+    `title` VARCHAR ( 128 ) DEFAULT NULL COMMENT '职务',
+    `department` VARCHAR ( 128 ) DEFAULT NULL COMMENT '部门',
+    `telphone` VARCHAR ( 16 ) DEFAULT NULL COMMENT '座机号',
+    `mobile` VARCHAR ( 16 ) DEFAULT NULL COMMENT '手机号',
+    `state_form_status` VARCHAR ( 16 ) NOT NULL DEFAULT 'enabled' COMMENT '状态: enabled - 有效, disabled - 禁用',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '1',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_user_username` ( `username` ) 
+) ENGINE = INNODB COMMENT = '系统用户';
+
+INSERT INTO `system_user` (
+	`id`,
+	`username`,
+	`password`,
+	`display`,
+	`mail_address`
+)
+VALUES
+	(
+		'1',
+		'root@test.com',
+		'8995b7b93016cb7f093b8f8b5335c546d875e6b1c5bfbc690de987446c7b81d2',
+		'System Administrator',
+		''
+	);
+
+-- ===========================================
+-- 废弃的用户令牌
+-- 
+CREATE TABLE `system_token_discard` (
+    `discard_token` VARCHAR ( 100 ) NOT NULL,
+    `expiration_time` BIGINT ( 20 ) NOT NULL COMMENT '有效期',
+    PRIMARY KEY ( `discard_token` ),
+    UNIQUE KEY `uk_system_discard_token` ( `discard_token` ),
+    KEY `idx_expiration_time` ( `expiration_time` )
+) ENGINE = INNODB COMMENT = '废弃的令牌清单';
+
+-- ===========================================
+-- 系统角色(除系统默认的角色外,租户可以添加自己的角色)
+-- 
+CREATE TABLE `system_role` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+    `code` VARCHAR ( 50 ) NOT NULL COMMENT '代码',
+    `name` VARCHAR ( 100 ) NOT NULL COMMENT '名称',
+    `description` VARCHAR ( 100 ) DEFAULT NULL COMMENT '备注',
+    `state_form_status` VARCHAR ( 32 ) NOT NULL DEFAULT 'enabled',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_role_code` ( `code` ),
+    UNIQUE KEY `uk_system_role_name` ( `name` ) 
+) ENGINE = INNODB COMMENT = '系统角色';
+
+-- ===========================================
+-- 角色功能(允许租户自行定义角色的授权功能)
+-- 
+CREATE TABLE `system_role_feature` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `role_id` BIGINT ( 20 ) NOT NULL,
+    `feature_id` BIGINT ( 20 ) NOT NULL,
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_feature_role` ( `feature_id`, `role_id` ) 
+) ENGINE = INNODB  COMMENT = '角色功能';
+
+-- ============================================
+-- 初始化基本角色和管理员角色
+INSERT INTO system_role (`code`, `name`, `description`)
+VALUES ('basic', '基础角色', '该角色仅具备基础授权，浏览授权范围的基础信息'),
+       ('admin', '管理角色', '该角色仅具备特别授权，具备授权范围的最大权限');
+
+-- ===========================================
+-- 业务授权子系统
+-- 
+CREATE TABLE `subsystem` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR ( 64 ) NOT NULL COMMENT '名称',
+    `code` VARCHAR ( 64 ) NOT NULL COMMENT '代码',
+    `description` VARCHAR ( 255 ) DEFAULT NULL COMMENT '描述',
+    `state_form_status` VARCHAR ( 20 ) NOT NULL DEFAULT 'enabled' COMMENT '状态',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '版本',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_subsystem_code` ( `code` ),
+    UNIQUE KEY `uk_subsystem_name` ( `name` ) 
+) ENGINE = INNODB COMMENT = '授权业务系统';
+
+-- ===========================================
+-- 用户授权信息
+-- 
+CREATE TABLE `system_user_scope_role` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `user_id` BIGINT ( 20 ) NOT NULL COMMENT '用户ID',
+    `scope_type` VARCHAR ( 20 ) NOT NULL COMMENT '用户授权范围：System , Productline , Subsystem , Guest',
+    `scope_id` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '授权标的的主键，当授权范围为 System 或 Guest时值为0',
+    `role_id` BIGINT ( 20 ) NOT NULL COMMENT '用户授权范围角色ID，如果授权为System或Guest，则role_id可为null',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_system_user_scope_role` ( `user_id`, `scope_type`, `scope_id`, `role_id` ) 
+) ENGINE = INNODB COMMENT = '用户授权信息';
+
+
+-- ===========================================
+-- 标准化的附件信息
+-- 
+CREATE TABLE `system_common_attachment` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+    `type` VARCHAR ( 128 ) NOT NULL COMMENT '附件类型，用于标记某一类型的附件，便于检索、区分、清理等用途',
+    `name` VARCHAR ( 128 ) NOT NULL COMMENT '文件名称',
+    `path` VARCHAR ( 256 ) NOT NULL COMMENT '存储地址',
+    `field` VARCHAR ( 128 ) NOT NULL COMMENT '附件对应流程表单的字段名称',
+    `size` BIGINT ( 20 ) NOT NULL COMMENT '文件的大小',
+    `content_type` VARCHAR ( 128 ) NOT NULL COMMENT '文件类型',
+    `created_user_id` BIGINT ( 20 ) NOT NULL COMMENT '创建人编号',
+    `created_user_name` VARCHAR ( 128 ) NOT NULL COMMENT '创建人代码',
+    `created_user_display` VARCHAR ( 128 ) NOT NULL COMMENT '创建人名称',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY ( `id` ),
+    KEY `uk_system_common_attachment_type` ( `type` ) 
+) ENGINE = INNODB COMMENT = '通用流程附件';
+
+-- ===========================================
+-- 标准化的分布任务锁
+-- 
+CREATE TABLE `system_common_lock` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
+    `object_type` VARCHAR ( 128 ) NOT NULL COMMENT '锁目标的类型',
+    `object_id`   VARCHAR ( 128 ) NOT NULL COMMENT '锁目标的主键',
+    `locked` TINYINT ( 1 ) DEFAULT NULL COMMENT '锁状态： null - 已释放，non-null - 锁定中',
+    `title` VARCHAR ( 128 ) NOT NULL COMMENT '锁标题：通常用于描述锁的用途',
+    `result` TINYINT ( 1 ) DEFAULT NULL COMMENT '执行结果：null - 结果待定，0 - 执行失败， 1 - 执行成功',
+    `logfile` VARCHAR ( 200 ) DEFAULT NULL COMMENT '日志地址，用于记录任务的过程日志信息',
+    `state`  VARCHAR ( 20 ) NOT NULL COMMENT '任务状态： created - 等待中，started - 运行中，released - 已结束',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `created_user_id` VARCHAR ( 128 ) DEFAULT NULL COMMENT '创建者编号',
+    `created_user_name` VARCHAR ( 128 ) DEFAULT NULL COMMENT '创建者姓名',
+    `running_at` TIMESTAMP NULL DEFAULT NULL COMMENT '任务启动时间',
+    `unlocked_at` TIMESTAMP NULL DEFAULT NULL COMMENT '释放时间',
+    `unlocked_user_id` VARCHAR ( 128 ) DEFAULT NULL COMMENT '释放者编号',
+    `unlocked_user_name` VARCHAR ( 128 ) DEFAULT NULL COMMENT '释放者姓名',
+    `timeout_seconds` INT ( 10 ) DEFAULT NULL COMMENT '超时时间，单位秒',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_object_type_id` ( `object_type`, `object_id`, `locked` ) 
+) ENGINE = INNODB;
+
+CREATE TABLE `system_common_lock_data` (
+    `task_id` BIGINT ( 20 ) NOT NULL COMMENT '任务编号',
+    `result_data` TEXT NULL COMMENT  '任务结果数据',
+    PRIMARY KEY ( `task_id` )
+) ENGINE = INNODB;
+
+
+-- ===========================================
+-- 标准化的用户操作日志
+-- 
+CREATE TABLE `system_common_log` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `object_type` VARCHAR ( 100 ) NOT NULL COMMENT '操作对象类型',
+    `object_id` VARCHAR ( 100 ) NOT NULL COMMENT '操作对象主键',
+    `operate_user_id` VARCHAR ( 128 ) NOT NULL COMMENT '操作人主键',
+    `operate_user_name` VARCHAR ( 128 ) NOT NULL COMMENT '操作人代码',
+    `operate_user_display` VARCHAR ( 128 ) NOT NULL COMMENT '操作人姓名',
+    `operate_time` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    `operate_type` VARCHAR ( 50 ) DEFAULT NULL COMMENT '操作类型',
+    `operate_desc` VARCHAR ( 1024 ) DEFAULT NULL COMMENT '操作描述',
+    `operate_detail_id` BIGINT ( 20 ) DEFAULT NULL COMMENT '操作详情',
+    `operate_proxy_name` VARCHAR ( 128 ) DEFAULT NULL COMMENT '代理操作人账户',
+    `operate_proxy_display` VARCHAR ( 128 ) DEFAULT NULL COMMENT '代理操作人姓名',
+    PRIMARY KEY ( `id` ),
+    KEY `idx_operate_time` ( `operate_time` ),
+    KEY `idx_object_type_id` ( `object_type`, `object_id` ) 
+) ENGINE = INNODB;
+
+CREATE TABLE `system_common_log_detail` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+    `operate_before` LONGTEXT COMMENT '操作前对象',
+    `operate_after` LONGTEXT COMMENT '操作后对象',
+    PRIMARY KEY ( `id` ) 
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 待办事项清单
+-- 
+CREATE TABLE `system_common_todo` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `title` VARCHAR ( 128 ) NOT NULL COMMENT '事项标题',
+    `category` VARCHAR ( 128 ) NOT NULL COMMENT '待办事项的流程单类型',
+    `target_key` VARCHAR ( 64 ) NOT NULL COMMENT '待办事项的流程环节，与 target_id 组合起来为待办事项的唯一键',
+    `target_id` VARCHAR ( 64 ) NOT NULL COMMENT '待办事项流程单编号',
+    `target_page` VARCHAR ( 256 ) NOT NULL COMMENT '待办事项的详情页地址',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建操作时间',
+    `created_user_id` BIGINT ( 20 ) NOT NULL COMMENT '创建人编号',
+    `created_user_name` VARCHAR ( 128 ) NOT NULL COMMENT '操作人账户',
+    `created_user_display` VARCHAR ( 128 ) NOT NULL COMMENT '操作人姓名',
+    `closed_at` TIMESTAMP NULL DEFAULT NULL COMMENT '处理时间',
+    `closed_user_id` BIGINT ( 20 ) DEFAULT NULL COMMENT '处理人编号',
+    `closed_user_name` VARCHAR ( 128 ) DEFAULT NULL COMMENT '处理人账户',
+    `closed_user_display` VARCHAR ( 128 ) DEFAULT NULL COMMENT '处理人姓名',
+    `result` VARCHAR ( 128 ) DEFAULT NULL COMMENT '处理的结果',
+    `state_form_status` CHAR ( 1 ) NOT NULL DEFAULT '0' COMMENT '待办事项的状态： 0 - 待办理， 1 - 已办理',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '状态版本',
+    PRIMARY KEY ( `id` ),
+    KEY `idx_system_common_todo_key_id` ( `target_key`, `target_id` ) 
+) ENGINE = INNODB;
+
+CREATE TABLE `system_common_todo_assignee` (
+`id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键',
+`todo_id` BIGINT ( 20 ) NOT NULL COMMENT '待办事项的编号',
+`todo_user` BIGINT ( 20 ) NOT NULL COMMENT '分配的处理用户',
+PRIMARY KEY ( `id` ),
+UNIQUE KEY `uk_system_todo_assignee` ( `todo_id`, `todo_user` ),
+KEY `idx_todo_id` ( `todo_id` ) USING BTREE 
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 产品清单
+-- 
+CREATE TABLE `productline` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT,
+    `code` VARCHAR ( 64 ) NOT NULL COMMENT '代码',
+    `name` VARCHAR ( 64 ) NOT NULL COMMENT '名称',
+    `owner_id` BIGINT ( 20 ) DEFAULT NULL COMMENT '负责人',
+    `description` VARCHAR ( 255 ) DEFAULT NULL COMMENT '描述',
+    `state_form_status` VARCHAR ( 20 ) NOT NULL DEFAULT 'enabled' COMMENT '状态',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '版本',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_productline_code` ( `code` ),
+    UNIQUE KEY `uk_productline_name` ( `name` ) 
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 产品线和业务系统关联表
+-- 
+CREATE TABLE `productline_subsystem` (
+    `productline_id`      BIGINT ( 20 ) NOT NULL COMMENT '产品线',
+    `subsystem_id`        BIGINT ( 20 ) NOT NULL COMMENT '业务系统',
+    PRIMARY KEY ( `productline_id`, `subsystem_id` )
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 可执行的异步任务管理
+-- 
+CREATE TABLE `external_async_job` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `title`               VARCHAR ( 128 ) NOT NULL COMMENT '任务标题',
+    `description`         VARCHAR ( 255 ) COMMENT '任务描述',
+    `service_class`       VARCHAR ( 128 ) NOT NULL COMMENT '预定义服务类',
+    `service_instance`    VARCHAR ( 64  ) NOT NULL COMMENT '预定义实例',
+    `service_parameters_form` TEXT NULL COMMENT '入参界面视图定义',
+    `concurrent_allowed`  TINYINT(3) UNSIGNED NOT NULL DEFAULT 1 COMMENT '任务最大允许并发数量',
+    `running_tasks`       INTEGER(4) UNSIGNED NOT NULL DEFAULT 0 COMMENT '正在运行的任务数量'
+    `state_form_status`   VARCHAR ( 32 ) NOT NULL DEFAULT 'created' COMMENT '状态： enabled - 可用， running - 运行中， disabled - 禁用',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT 0 COMMENT '状态版本',
+    `created_at`          TIMESTAMP NOT NULL DEFAULT NOW() COMMENT '创建时间',
+    `created_by`          BIGINT  ( 20  ) NOT NULL COMMENT '创建人主键',
+    `created_code_by`     VARCHAR ( 128 ) NOT NULL COMMENT '创建人账户',
+    `created_name_by`     VARCHAR ( 128 ) NOT NULL COMMENT '创建人姓名',
+    PRIMARY KEY ( `id` ),
+    UNIQUE INDEX `uk_external_async_job` ( `service_class`,  `service_instance`)
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 应用申请
+-- 
+CREATE TABLE `resource_apply_app` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `name` VARCHAR ( 128 ) NOT NULL COMMENT '应用名称',
+    `type` VARCHAR ( 20 ) NOT NULL COMMENT '应用类型: applcation - 后端应用程序；client - 客户端程序；library - 组件库；static - 静态资源',
+    `vcs_type` VARCHAR ( 20 ) NOT NULL COMMENT '源码仓库类型: gitlab/subversion',
+    `description` VARCHAR ( 255 ) NOT NULL COMMENT '应用描述',
+    `subsystem_id` BIGINT ( 20 ) NOT NULL COMMENT '业务系统编号',
+    `code_level` VARCHAR ( 32 ) NOT NULL DEFAULT '20:yellow' COMMENT '代码质量分级\r\n10:red - 红色，对代码的质量有最高的质量要求；\r\n20:yellow - 黄色，对代码的质量有较高的要求；\r\n30:blue - 蓝色，对代码的质量不做明确的要求；',
+    `stateless` TINYINT ( 1 ) NOT NULL DEFAULT 0 COMMENT '应用运行是否有状态： 0 - 无， 非零 - 有',
+    `state_form_status`   VARCHAR ( 32 ) NOT NULL DEFAULT 'created' COMMENT '状态： created - 待提交， submitted - 待审批， rejected - 审批拒绝， approved - 审批通过',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT 0 COMMENT '状态版本',
+    `created_at` TIMESTAMP NOT NULL DEFAULT NOW() COMMENT '创建时间',
+    `created_user_code`   VARCHAR ( 128 ) NOT NULL COMMENT '创建人代码',
+    `created_user_name`   VARCHAR ( 128 ) NOT NULL COMMENT '创建人姓名',
+    PRIMARY KEY ( `id` ),
+    UNIQUE INDEX `uk_resource_apply_app_name` ( `name` ) USING BTREE
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 应用信息
+-- 
+CREATE TABLE `application` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `name` VARCHAR ( 128 ) NOT NULL COMMENT '应用名称',
+    `type` VARCHAR ( 20 ) NOT NULL COMMENT '应用类型: applcation - 后端应用程序；client - 客户端程序；library - 组件库；static - 静态资源文件；',
+    `vcs_type` VARCHAR ( 20 ) NOT NULL COMMENT '源码仓库类型: gitlab/subversion',
+    `description` VARCHAR ( 255 ) NOT NULL COMMENT '应用描述',
+    `subsystem_id` BIGINT ( 20 ) NOT NULL COMMENT '业务系统编号',
+    `vcs_path` VARCHAR ( 190 ) NOT NULL COMMENT '代码仓库地址',
+    `release_branch` VARCHAR ( 128 ) NOT NULL DEFAULT 'refs/heads/master' COMMENT '发布分支 : refs/heads/master - 主干, refs/heads/patch/* - 紧急',
+    `code_level` VARCHAR ( 32 ) NOT NULL DEFAULT '20:yellow' COMMENT '代码质量分级\r\n10:red - 红色，对代码的质量有最高的质量要求；\r\n20:yellow - 黄色，对代码的质量有较高的要求；\r\n30:blue - 蓝色，对代码的质量不做明确的要求；',
+    `stateless` TINYINT ( 1 ) NOT NULL DEFAULT 0 COMMENT '应用运行是否有状态： 0 - 无， 非零 - 有',
+    `build_service` VARCHAR ( 128 ) NOT NULL COMMENT '应的构建服务，标识应用如何被构建，通过会预定义一些构建服务供选择',
+    `build_main_version` BIGINT ( 12 ) NOT NULL DEFAULT '100000000' COMMENT '应用的下一个大版本：默认从 1,0000,0000 开始（即 1.0.0），其值可根据需要人为进行修改',
+    `created_at` TIMESTAMP NOT NULL DEFAULT NOW() COMMENT '创建时间',
+    `created_user_code`   VARCHAR ( 128 ) NOT NULL COMMENT '创建人代码',
+    `created_user_name`   VARCHAR ( 128 ) NOT NULL COMMENT '创建人姓名',
+    `state_form_status`   VARCHAR ( 32 ) NOT NULL DEFAULT 'created' COMMENT '状态： created - 待上线， online - 在线中， offlining - 待下线， offlined - 已下线',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '状态版本',
+    PRIMARY KEY ( `id` ),
+    UNIQUE INDEX `uk_application_name` ( `name` ) USING BTREE,
+    UNIQUE INDEX `uk_application_vcspath` ( `vcs_path` ) USING BTREE,
+    INDEX `idx_application_subsystem` ( `subsystem_id` ) USING BTREE 
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 应用收藏
+-- 
+CREATE TABLE `application_bookmark` (
+  `app_id` BIGINT ( 20 ) NOT NULL COMMENT '应用主键',
+  `user_id` BIGINT ( 20 ) NOT NULL COMMENT '用户主键',
+  PRIMARY KEY (`user_id`,`app_id`)
+) ENGINE=InnoDB;
+
+-- ===========================================
+-- 应用的部署节点信息
+-- 
+CREATE TABLE `application_namespace` (
+  `application_id`   BIGINT(20) NOT NULL COMMENT '应用主键',
+  `namespace_id`     BIGINT(20) NOT NULL COMMENT '命名空间主键',
+  `replicas`         INTEGER(11) NOT NULL COMMENT '副本数量',
+  `deleted`          TINYINT(1) NOT NULL DEFAULT '0' COMMENT '是否已删除',
+  PRIMARY KEY (`application_id`,`namespace_id`)
+) ENGINE=InnoDB;
+
+-- ===========================================
+-- 应用提交的变更集，用于缓存通过 vcs hook 进来的变更记录
+-- 
+CREATE TABLE `vsc_change_info` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `application_id`    BIGINT  ( 20  ) NOT NULL,
+    `vcs_type`          VARCHAR ( 20 )  NOT NULL COMMENT '源码仓库类型',
+    `vcs_path`          VARCHAR ( 190 ) NOT NULL COMMENT '源码仓库地址',
+    `vcs_revision`      VARCHAR ( 40  ) NOT NULL COMMENT '变更提交版本',
+    `vcs_refs_name`     VARCHAR ( 128 ) NOT NULL COMMENT '变更代码分支',
+    `vcs_summary`       VARCHAR ( 100 ) NOT NULL COMMENT '变更提交标题',
+    `vcs_message`       VARCHAR ( 500 ) NOT NULL COMMENT '变更提交描述',
+    `vcs_old_revision`  VARCHAR ( 40  ) NOT NULL COMMENT '变更提交分支的之前版本',
+    `created_at` TIMESTAMP NOT NULL DEFAULT NOW() COMMENT '创建时间',
+    `created_by`        BIGINT  ( 20  ) NOT NULL COMMENT '变更提交用户编号',
+    `created_code_by`   VARCHAR ( 128 ) NOT NULL COMMENT '变更提交用户账号',
+    `created_name_by`   VARCHAR ( 128 ) NOT NULL COMMENT '变更提交用户姓名',
+    `state_form_status`   VARCHAR ( 32 ) NOT NULL DEFAULT 'draft' COMMENT '状态： draft - 待确认， created - 已确认',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '状态版本',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_vsc_change_info` ( `application_id`, `vcs_revision`, `vcs_refs_name` )
+) ENGINE = INNODB;
+
+-- ===========================================
+-- 应用提交及构建发布记录
+-- 
+CREATE TABLE `build_plan` (
+    `id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+    `application_id` BIGINT ( 20 ) NOT NULL COMMENT '关联应用',
+    `commit_vcspath` VARCHAR ( 255 ) NOT NULL COMMENT '变更仓库地址',
+    `commit_branch` VARCHAR ( 255 ) NOT NULL COMMENT '变更代码分支',
+    `commit_revision` VARCHAR ( 64 ) NOT NULL COMMENT '变更提交版本',
+    `commit_commiter` VARCHAR ( 128 ) NOT NULL COMMENT '变更提交账户',
+    `commit_message` VARCHAR ( 255 ) NOT NULL COMMENT '变更提交描述',
+    `build_type` VARCHAR ( 16 ) NOT NULL COMMENT '构建类型：branch - 分支构建； master - 主干发布；patch - 紧急发布',
+    `aborted` TINYINT ( 1 ) NOT NULL DEFAULT 0 COMMENT '构建计划是否终止： 0 - 否，非0 - 是; 已终止的构建计划，将禁止变更',
+    `build_package_version` BIGINT ( 16 ) DEFAULT NULL COMMENT '应用版本号：默认从 1,00000000,00000000,0000001 开始（即 1.0.0.1）',
+    `build_package_path` VARCHAR ( 255 ) DEFAULT NULL COMMENT '构建的发布包存放地址：通过 dev/rel 来标记',
+    `state_form_status` VARCHAR ( 32 ) NOT NULL DEFAULT '' COMMENT '状态： dev_created - 分支待构建，dev_build_failed - 分支构建失败，dev_deploy_waiting - 开发待部署，dev_deploy_failed - 开发部署失败，state_merge_waiting - 集成待合并，stage_merge_failed - 集成合并失败，stage_merge_success - 集成合并成功，stage_build_waiting - 集成待构建，stage_build_failed - 集成构建失败，stage_deploy_waiting - 集成待部署，stage_deploy_failed, 集成部署失败，stage_test_waiting - 集成待验证，stage_test_failed - 集成验证失败，prod_approve_waiting - 发布待审批，prod_approve_reject - 生产审批拒绝，prod_deploy_waiting - 生产部署，prod_deploy_failed - 生产部署失败，prod_verify_waiting - 生产待验证，prod_verify_failed - 生产验证失败，release_success - 发布成功',
+    `state_form_revision` BIGINT ( 20 ) NOT NULL DEFAULT '0' COMMENT '状态版本',
+    `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    PRIMARY KEY ( `id` ),
+    UNIQUE KEY `uk_application_revision` ( `application_id`, `commit_revision` ),
+    KEY `idx_application` ( `application_id` ),
+    KEY `idx_form_status` ( `state_form_status` ) 
+) ENGINE = INNODB;
+
