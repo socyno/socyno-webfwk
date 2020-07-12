@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.github.reinert.jjschema.Attributes;
 import com.socyno.base.bscfield.FieldTableView;
-import com.socyno.stateform.model.SystemTenantDbInfoWithId;
+import com.socyno.webbsc.model.SystemTenantDbInfoWithId;
 import com.socyno.webfwk.feature.SystemFeatureOption;
 
 import lombok.Getter;

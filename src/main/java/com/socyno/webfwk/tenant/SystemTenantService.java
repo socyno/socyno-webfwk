@@ -11,14 +11,14 @@ import com.socyno.stateform.abs.AbstractStateAction;
 import com.socyno.stateform.abs.AbstractStateCreateAction;
 import com.socyno.stateform.abs.AbstractStateFormServiceWithBaseDao;
 import com.socyno.stateform.abs.BasicStateForm;
-import com.socyno.stateform.authority.Authority;
-import com.socyno.stateform.authority.AuthorityScopeType;
-import com.socyno.stateform.model.SystemTenantDbInfoWithId;
-import com.socyno.stateform.service.TenantBasicService;
+import com.socyno.webbsc.authority.Authority;
+import com.socyno.webbsc.authority.AuthorityScopeType;
+import com.socyno.webbsc.model.SystemTenantDbInfoWithId;
 import com.socyno.stateform.util.StateFormEventClassEnum;
 import com.socyno.stateform.util.StateFormNamedQuery;
 import com.socyno.stateform.util.StateFormQueryBaseEnum;
 import com.socyno.stateform.util.StateFormStateBaseEnum;
+import com.socyno.webbsc.service.jdbc.TenantBasicService;
 import com.socyno.webfwk.feature.FieldSystemFeatureAll;
 import com.socyno.webfwk.feature.SystemFeatureOption;
 

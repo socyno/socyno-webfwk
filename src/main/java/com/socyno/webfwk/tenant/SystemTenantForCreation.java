@@ -3,7 +3,7 @@ package com.socyno.webfwk.tenant;
 import java.util.List;
 
 import com.github.reinert.jjschema.Attributes;
-import com.socyno.stateform.model.SystemTenantDbInfo;
+import com.socyno.webbsc.model.SystemTenantDbInfo;
 import com.socyno.webfwk.tenant.SystemTenantForDatabasesAdd.FieldDatabaseCreation;
 
 import lombok.Getter;

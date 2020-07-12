@@ -28,14 +28,14 @@ import com.socyno.base.bscservice.HttpUtil;
 import com.socyno.stateform.abs.AbstractStateCommentAction;
 import com.socyno.stateform.abs.AbstractStateForm;
 import com.socyno.stateform.abs.DynamicStateForm;
-import com.socyno.stateform.authority.Authority;
-import com.socyno.stateform.authority.AuthorityScopeType;
-import com.socyno.stateform.service.SimpleAttachmentService;
-import com.socyno.stateform.service.SimpleLogService;
 import com.socyno.stateform.service.StateFormService;
 import com.socyno.stateform.service.StateFormService.CommonStateFormRegister;
+import com.socyno.webbsc.authority.Authority;
+import com.socyno.webbsc.authority.AuthorityScopeType;
 import com.socyno.webbsc.ctxutil.HttpMessageConverter;
 import com.socyno.webbsc.exception.PageNotFoundException;
+import com.socyno.webbsc.service.jdbc.SimpleAttachmentService;
+import com.socyno.webbsc.service.jdbc.SimpleLogService;
 
 public class FormController {
     @ResponseBody
@@ -263,7 +263,8 @@ public class FormController {
     @Authority(AuthorityScopeType.System)
     @Attributes(title = "查询给定的界面原型定义")
     @RequestMapping(value = "/view/{formName}/{formTypeKey}/construction", method = RequestMethod.GET)
-    public R queryTypeFormConstruction(@PathVariable("formName") String formName, @PathVariable("formTypeKey") String formTypeKey) throws Exception {
+    public R queryTypeFormConstruction(@PathVariable("formName") String formName,
+            @PathVariable("formTypeKey") String formTypeKey, String freshCached) throws Exception {
         return R.ok().setData(StateFormService.queryFormTypeDefinition(formTypeKey));
     }
     

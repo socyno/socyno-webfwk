@@ -28,10 +28,10 @@ import com.socyno.stateform.abs.AbstractStateCreateAction;
 import com.socyno.stateform.abs.AbstractStateDeleteAction;
 import com.socyno.stateform.abs.AbstractStateFormServiceWithBaseDao;
 import com.socyno.stateform.abs.BasicStateForm;
-import com.socyno.stateform.authority.Authority;
-import com.socyno.stateform.authority.AuthorityScopeType;
+import com.socyno.webbsc.authority.Authority;
+import com.socyno.webbsc.authority.AuthorityScopeType;
+import com.socyno.webbsc.authority.AuthorityEntity;
 import com.socyno.stateform.field.FieldSystemAuths;
-import com.socyno.stateform.field.OptionSystemAuth;
 import com.socyno.stateform.util.StateFormEventClassEnum;
 import com.socyno.stateform.util.StateFormNamedQuery;
 import com.socyno.stateform.util.StateFormQueryBaseEnum;
@@ -141,7 +141,7 @@ public class SystemFeatureService extends AbstractStateFormServiceWithBaseDao<Sy
                             id.set(r.getLong(1));
                         }
                     });
-            List<OptionSystemAuth> auths;
+            List<AuthorityEntity> auths;
             if ((auths = form.getAuths()) != null) {
                 setFeatureAuths(id.get(), auths);
             }
@@ -168,7 +168,7 @@ public class SystemFeatureService extends AbstractStateFormServiceWithBaseDao<Sy
         @Override
         public Void handle(String event, final SystemFeatureSimple originForm, final SystemFeatureForEdition form,
                 final String message) throws Exception {
-            List<OptionSystemAuth> auths;
+            List<AuthorityEntity> auths;
             getFormBaseDao().executeUpdate(SqlQueryUtil.prepareUpdateQuery(getFormTable(),
                     new ObjectMap().put("=id", form.getId()).put("name", form.getName()).put("description",
                             CommonUtil.ifNull(form.getDescription(), ""))));
@@ -259,13 +259,13 @@ public class SystemFeatureService extends AbstractStateFormServiceWithBaseDao<Sy
      * @param auths
      * @throws Exception
      */
-    private void setFeatureAuths(long formId, List<OptionSystemAuth> auths) throws Exception {
+    private void setFeatureAuths(long formId, List<AuthorityEntity> auths) throws Exception {
         if (auths == null) {
             return;
         }
         getFormBaseDao().executeUpdate(
                 SqlQueryUtil.prepareDeleteQuery("system_feature_auth", new ObjectMap().put("=feature_id", formId)));
-        for (OptionSystemAuth auth : auths) {
+        for (AuthorityEntity auth : auths) {
             if (auth == null || StringUtils.isBlank(auth.getOptionValue())) {
                 continue;
             }
@@ -332,10 +332,10 @@ public class SystemFeatureService extends AbstractStateFormServiceWithBaseDao<Sy
                     if ((flattenAuthOptions = FieldSystemAuths.getInstance()
                             .queryDynamicValues(flattenFeatureAuths.toArray())) != null
                             && flattenAuthOptions.size() > 0) {
-                        List<OptionSystemAuth> singleOptionAuths;
-                        Map<String, OptionSystemAuth> mappedOptionAuths = new HashMap<>();
+                        List<AuthorityEntity> singleOptionAuths;
+                        Map<String, AuthorityEntity> mappedOptionAuths = new HashMap<>();
                         for (FieldOption option : flattenAuthOptions) {
-                            mappedOptionAuths.put(option.getOptionValue(), (OptionSystemAuth)option);
+                            mappedOptionAuths.put(option.getOptionValue(), (AuthorityEntity)option);
                         }
                         for (Map.Entry<Long, Set<String>> entry: authKeysByFeatureId.entrySet()) {
                             SystemFeatureWithAuths withAuth;
@@ -343,7 +343,7 @@ public class SystemFeatureService extends AbstractStateFormServiceWithBaseDao<Sy
                                 continue;
                             }
                             withAuth.setAuths(singleOptionAuths = new ArrayList<>());
-                            OptionSystemAuth option;
+                            AuthorityEntity option;
                             for (String authKey : entry.getValue()) {
                                 if ((option = mappedOptionAuths.get(authKey)) == null) {
                                     continue;

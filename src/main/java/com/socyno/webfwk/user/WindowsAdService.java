@@ -16,8 +16,8 @@ import javax.naming.ldap.LdapContext;
 
 import com.socyno.base.bscexec.MessageException;
 import com.socyno.base.bscmixutil.StringUtils;
-import com.socyno.stateform.service.SimpleEncryptService;
 import com.socyno.webbsc.ctxutil.ContextUtil;
+import com.socyno.webbsc.service.SimpleEncryptService;
 
 import java.util.Hashtable;
 

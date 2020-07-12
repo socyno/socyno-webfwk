@@ -11,10 +11,10 @@ import com.socyno.stateform.abs.AbstractStateAction;
 import com.socyno.stateform.abs.AbstractStateCreateAction;
 import com.socyno.stateform.abs.AbstractStateFormServiceWithBaseDao;
 import com.socyno.stateform.abs.BasicStateForm;
-import com.socyno.stateform.authority.Authority;
-import com.socyno.stateform.authority.AuthorityScopeType;
-import com.socyno.stateform.service.TenantSpecialDataSource;
+import com.socyno.webbsc.authority.Authority;
+import com.socyno.webbsc.authority.AuthorityScopeType;
 import com.socyno.stateform.util.*;
+import com.socyno.webbsc.service.jdbc.TenantSpecialDataSource;
 
 import lombok.Getter;
 

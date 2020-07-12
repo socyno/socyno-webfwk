@@ -6,8 +6,9 @@ import java.util.regex.Pattern;
 import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.v1.FieldOption;
 import com.socyno.base.bscmixutil.StringUtils;
-import com.socyno.stateform.authority.AuthorityScopeType;
+import com.socyno.webbsc.authority.AuthorityScope;
 import com.socyno.stateform.exec.StateFormFieldInvalidOptionException;
+import com.socyno.stateform.service.PermissionService;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -44,14 +45,14 @@ public class OptionSystemUserAuth implements FieldOption {
     @Override
     public void setOptionValue(String value) {
         Matcher matched;
-        AuthorityScopeType scopTypeEnum;
+        AuthorityScope scopTypeEnum;
         if (StringUtils.isBlank(value) || (matched = REGEXP_OPTION_VALUE.matcher(value)) == null 
-                || !matched.find() || (scopTypeEnum = AuthorityScopeType.forName(matched.group(1))) == null) {
+                || !matched.find() || (scopTypeEnum = PermissionService.getInstance().getProvidedAuthorityScope(matched.group(1))) == null) {
             throw new StateFormFieldInvalidOptionException(OptionSystemUserAuth.class, value);
         }
-        scopeType = scopTypeEnum.name();
+        scopeType = scopTypeEnum.getName();
         roleId = new Long(matched.group(3));
-        scopeId = scopTypeEnum.checkScopeId() ? new Long(matched.group(2)) : 0;
+        scopeId = scopTypeEnum.isSubsystem() ? new Long(matched.group(2)) : 0;
     }
     
     @Override

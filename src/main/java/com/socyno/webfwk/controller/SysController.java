@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.socyno.base.bscmodel.R;
-import com.socyno.stateform.authority.Authority;
-import com.socyno.stateform.authority.AuthorityScopeType;
+import com.socyno.webbsc.authority.Authority;
+import com.socyno.webbsc.authority.AuthorityScopeType;
 import com.socyno.webfwk.initail.SystemInitialConfig;
 import com.socyno.webfwk.initail.SystemInitialService;
 

@@ -11,8 +11,8 @@ import com.socyno.base.bscmixutil.CommonUtil;
 import com.socyno.base.bscmodel.ObjectMap;
 import com.socyno.base.bscsqlutil.AbstractDao;
 import com.socyno.base.bscsqlutil.SqlQueryUtil;
-import com.socyno.stateform.service.TenantSpecialDataSource;
 import com.socyno.webbsc.ctxutil.LoginTokenUtil;
+import com.socyno.webbsc.service.jdbc.TenantSpecialDataSource;
 
 public class UserTokenService {
     

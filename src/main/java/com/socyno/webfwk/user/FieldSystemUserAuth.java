@@ -11,8 +11,8 @@ import com.github.reinert.jjschema.v1.FieldOptionsFilter;
 import com.socyno.base.bscfield.FieldTableView;
 import com.socyno.base.bscmixutil.ConvertUtil;
 import com.socyno.base.bscmixutil.StringUtils;
-import com.socyno.stateform.authority.AuthorityScopeType;
-import com.socyno.stateform.service.TenantSpecialDataSource;
+import com.socyno.webbsc.authority.AuthorityScopeType;
+import com.socyno.webbsc.service.jdbc.TenantSpecialDataSource;
 
 import lombok.Getter;
 
@@ -116,10 +116,9 @@ public class FieldSystemUserAuth extends FieldTableView {
      */
     @Override
     public List<OptionSystemUserAuth> queryDynamicOptions(FieldOptionsFilter cond) throws Exception {
-        FilterSystemUserAuth filter = (FilterSystemUserAuth)cond;
-        AuthorityScopeType scopeType;
-        if ((scopeType = AuthorityScopeType.forName(filter.getScopeType())) ==  null
-                    || filter.getRoleId() == null) {
+        String scopeType;
+        FilterSystemUserAuth filter = (FilterSystemUserAuth) cond;
+        if ((scopeType = filter.getScopeType()) == null || filter.getRoleId() == null) {
             return Collections.emptyList();
         }
         String sql = "";

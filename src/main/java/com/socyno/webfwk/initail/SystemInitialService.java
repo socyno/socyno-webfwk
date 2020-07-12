@@ -6,10 +6,10 @@ import com.socyno.base.bscmixutil.StringUtils;
 import com.socyno.base.bscmodel.SessionContext;
 import com.socyno.base.bscmodel.UserContext;
 import com.socyno.base.bscsqlutil.AbstractDao;
-import com.socyno.stateform.service.SimpleEncryptService;
-import com.socyno.stateform.service.TenantBasicService;
 import com.socyno.webbsc.ctxutil.ContextUtil;
 import com.socyno.webbsc.ctxutil.LoginTokenUtil;
+import com.socyno.webbsc.service.SimpleEncryptService;
+import com.socyno.webbsc.service.jdbc.TenantBasicService;
 import com.socyno.webfwk.user.SystemUserForCreation;
 import com.socyno.webfwk.user.SystemUserService;
 

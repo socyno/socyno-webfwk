@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import org.adrianwalker.multilinestring.Multiline;
 import com.github.reinert.jjschema.Attributes;
+import com.socyno.base.bscmixutil.ArrayUtils;
 import com.socyno.base.bscmixutil.CommonUtil;
 import com.socyno.base.bscmixutil.ConvertUtil;
 import com.socyno.base.bscmixutil.StringUtils;
@@ -31,17 +32,16 @@ import com.socyno.stateform.abs.AbstractStateCreateAction;
 import com.socyno.stateform.abs.AbstractStateDeleteAction;
 import com.socyno.stateform.abs.AbstractStateFormServiceWithBaseDao;
 import com.socyno.stateform.abs.BasicStateForm;
-import com.socyno.stateform.authority.Authority;
-import com.socyno.stateform.authority.AuthorityScopeType;
+import com.socyno.webbsc.authority.Authority;
+import com.socyno.webbsc.authority.AuthorityScopeType;
+import com.socyno.webbsc.authority.AuthorityEntity;
 import com.socyno.stateform.field.FieldSystemAuths;
-import com.socyno.stateform.field.OptionSystemAuth;
-import com.socyno.stateform.service.FeatureBasicService;
-import com.socyno.stateform.service.PermissionService;
 import com.socyno.stateform.util.StateFormEventClassEnum;
 import com.socyno.stateform.util.StateFormNamedQuery;
 import com.socyno.stateform.util.StateFormQueryBaseEnum;
 import com.socyno.stateform.util.StateFormStateBaseEnum;
 import com.socyno.webbsc.ctxutil.ContextUtil;
+import com.socyno.webbsc.service.jdbc.FeatureBasicService;
 
 import lombok.Data;
 import lombok.Getter;
@@ -271,11 +271,11 @@ public class SystemMenuService extends AbstractStateFormServiceWithBaseDao<Syste
     /**
      * 添加菜单授权信息
      */
-    private void menuAuthsAdd(long formId, List<OptionSystemAuth> auths) throws Exception {
+    private void menuAuthsAdd(long formId, List<AuthorityEntity> auths) throws Exception {
         if (auths == null || auths.isEmpty()) {
             return;
         }
-        for (OptionSystemAuth auth : auths) {
+        for (AuthorityEntity auth : auths) {
             if (auth == null || StringUtils.isBlank(auth.getOptionValue())) {
                 continue;
             }
@@ -295,11 +295,11 @@ public class SystemMenuService extends AbstractStateFormServiceWithBaseDao<Syste
     /**
      * 添加菜单授权信息
      */
-    private void menuAuthsDel(long formId, List<OptionSystemAuth> auths) throws Exception {
+    private void menuAuthsDel(long formId, List<AuthorityEntity> auths) throws Exception {
         if (auths == null || auths.isEmpty()) {
             return;
         }
-        for (OptionSystemAuth auth : auths) {
+        for (AuthorityEntity auth : auths) {
             if (auth == null || StringUtils.isBlank(auth.getOptionValue())) {
                 continue;
             }
@@ -331,7 +331,7 @@ public class SystemMenuService extends AbstractStateFormServiceWithBaseDao<Syste
     /**
      *  批量检索菜单的授权，返回对象以菜单编号为键，授权列表为值
      */
-    private Map<Long, List<OptionSystemAuth>> queryAuthsByMenuId(Long... menuIds) throws Exception {
+    private Map<Long, List<AuthorityEntity>> queryAuthsByMenuId(Long... menuIds) throws Exception {
         if ((menuIds = ConvertUtil.asNonNullUniqueLongArray((Object[]) menuIds)) == null || menuIds.length <= 0) {
             return Collections.emptyMap();
         }
@@ -351,14 +351,14 @@ public class SystemMenuService extends AbstractStateFormServiceWithBaseDao<Syste
             }
             singleAuthMenuIds.add(ma.getMenuId());
         }
-        List<OptionSystemAuth> allSystemAuths = FieldSystemAuths.getInstance()
+        List<AuthorityEntity> allSystemAuths = FieldSystemAuths.getInstance()
                 .queryDynamicValues(flattedAuthKeys.toArray());
         if (allSystemAuths == null || allSystemAuths.size() <= 0) {
             return Collections.emptyMap();
         }
-        List<OptionSystemAuth> singleMenuAuths;
-        Map<Long, List<OptionSystemAuth>> mappedMenuAuths = new HashMap<>();
-        for (OptionSystemAuth option : allSystemAuths) {
+        List<AuthorityEntity> singleMenuAuths;
+        Map<Long, List<AuthorityEntity>> mappedMenuAuths = new HashMap<>();
+        for (AuthorityEntity option : allSystemAuths) {
             if ((singleAuthMenuIds = mappedAuthMenuIds.get(option.getAuth())) == null) {
                 continue;
             }
@@ -486,11 +486,11 @@ public class SystemMenuService extends AbstractStateFormServiceWithBaseDao<Syste
         SystemMenuTree menuTree = new SystemMenuTree().setChildren(new ArrayList<>());
         List<SystemMenuAuthForm> result = getFormBaseDao().queryAsList(
                 SystemMenuAuthForm.class, SQL_QUERY_MENU_TREE);
-        List<String> myAuths = SessionContext.isAdmin()
-                ? FeatureBasicService.getTenantAllAuths(SessionContext.getTenant())
-                : PermissionService.getMyAuths();
+        String[] myAuths = SessionContext.isAdmin()
+                ? FeatureBasicService.getInstance().getTenantAllAuths(SessionContext.getTenant())
+                : getPermissionService().getMyAuths();
         /* 无授权，即无菜单 */
-        if (myAuths == null || myAuths.isEmpty()) {
+        if (myAuths == null || myAuths.length <= 0) {
             return null;
         }
         for (SystemMenuAuthForm item : result) {
@@ -529,7 +529,7 @@ public class SystemMenuService extends AbstractStateFormServiceWithBaseDao<Syste
         Long[] menuIds = menuMap.keySet().toArray(new Long[0]);
         for (int m = 0; m < menuIds.length; m++) {
             if ((menuAuths = menuMap.get(menuIds[m]).getAuthKeys()) == null || menuAuths.size() <= 0
-                    || !myAuths.containsAll(menuAuths)) {
+                    || !ArrayUtils.containsAll(myAuths, menuAuths.toArray())) {
                 menuMap.remove(menuIds[m]);
             }
         }
@@ -605,7 +605,7 @@ public class SystemMenuService extends AbstractStateFormServiceWithBaseDao<Syste
         }
         
         if (authMenuIds.size() > 0) {
-            Map<Long, List<OptionSystemAuth>> mappedMenuAuths;
+            Map<Long, List<AuthorityEntity>> mappedMenuAuths;
             if ((mappedMenuAuths = queryAuthsByMenuId(authMenuIds.toArray(new Long[0]))) != null) {
                 for (SystemMenuWithAuths ma : withAuths) {
                     ma.setAuths(mappedMenuAuths.get(((SystemMenuSimple)ma).getId()));

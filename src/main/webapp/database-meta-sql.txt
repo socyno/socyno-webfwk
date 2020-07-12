@@ -129,10 +129,11 @@ INSERT IGNORE INTO system_role_feature (`feature_id`, `role_id`)
 -- ===========================================
 -- 系统注册接口
 -- 
-CREATE TABLE IF NOT EXISTS `system_interfaze` (
-    `auth`  VARCHAR ( 180 ) NOT NULL COMMENT '接口标识',
-    `scope_type` VARCHAR ( 64 )  NOT NULL COMMENT '授权类型',
-    `request_methods` VARCHAR ( 64 )  NOT NULL COMMENT '请求方式',
+CREATE TABLE IF NOT EXISTS `system_auth` (
+    `auth`  VARCHAR ( 180 ) NOT NULL COMMENT '授权标识',
+    `scope` VARCHAR ( 64 )  NOT NULL COMMENT '授权范围',
+    `app_name` VARCHAR ( 64 )  NOT NULL COMMENT '所属应用',
+    `group_name` VARCHAR ( 64 )  NOT NULL COMMENT '所属分组',
     `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `deleted_at` TIMESTAMP NULL DEFAULT NULL COMMENT '删除时间，有值则意味着已被删除',
     PRIMARY KEY ( `auth` )
@@ -365,35 +366,6 @@ CREATE TABLE IF NOT EXISTS `system_form_viewattrs` (
 	`form_attrs` TEXT COMMENT '界面配置数据',
 	PRIMARY KEY (`id`),
 	UNIQUE KEY `uk_class_path` (`class_path`)
-) ENGINE = INNODB DEFAULT CHARSET = UTF8;
-
--- ===========================================
--- 通用流程事件注册信息
---
-CREATE TABLE IF NOT EXISTS `system_form_actions` (
-	`id` BIGINT ( 20 ) NOT NULL AUTO_INCREMENT COMMENT '编号',
-	`form_name` VARCHAR (128) NOT NULL COMMENT '表单名称',
-	`action_name` VARCHAR (128) NOT NULL COMMENT '事件名称',
-	`form_backend` VARCHAR (64) NOT NULL COMMENT '后端服务实例名',
-	`action_key` VARCHAR (190) NOT NULL COMMENT '事件唯一键（<form_name>::<action_name>）',
-	`action_display` VARCHAR (255) NOT NULL COMMENT '显示名',
-	`action_type` VARCHAR (32) NOT NULL DEFAULT '' COMMENT '事件类型',
-	`action_form_type` VARCHAR (16) NOT NULL DEFAULT '' COMMENT '操作界面类型：NULL - 无界面; EDIT - 编辑; VIEW - 视图;',
-	`source_state` VARCHAR (255) DEFAULT NULL COMMENT '操作前的初始状态值',
-	`target_state` VARCHAR (255) DEFAULT NULL COMMENT '操作后的目标状态值',
-	`prepare_required` TINYINT ( 1 ) NOT NULL DEFAULT '0' COMMENT '是否支持操作执行前的数据准备接口',
-	`message_reuqired` TINYINT ( 1 ) DEFAULT 0 COMMENT '是否要求填写操作说明:NULL - 不需要; TRUE - 必填; FALSE - 选填',
-	`comfirm_reuqired` TINYINT ( 1 ) NOT NULL DEFAULT '1' COMMENT '是否在执行操作前做二次确认',
-	`revision_ignored` TINYINT ( 1 ) NOT NULL DEFAULT '0' COMMENT '是否跳过版本自动升级',
- 	`action_async` TINYINT ( 1 ) NOT NULL DEFAULT '0' COMMENT '是否异步执行',
-	`authority_type` VARCHAR (32) NOT NULL DEFAULT '' COMMENT '授权的范围',
-	`authority_parser` VARCHAR (180) NOT NULL DEFAULT '' COMMENT '授权对象解析器',
-	`authority_cheker` VARCHAR (180) NOT NULL DEFAULT '' COMMENT '特殊授权验证器',
-	`last_updated` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
-	PRIMARY KEY (`id`),
-	UNIQUE KEY `uk_system_form_actions_form_action` (`form_name`, `action_name`),
-	KEY `idx_system_form_actions_form_name` (`form_name`),
-	KEY `idx_idx_system_form_actions_action_key` (`action_key`)
 ) ENGINE = INNODB DEFAULT CHARSET = UTF8;
 
 -- ===========================================

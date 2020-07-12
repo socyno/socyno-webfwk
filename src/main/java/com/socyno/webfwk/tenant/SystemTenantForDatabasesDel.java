@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.github.reinert.jjschema.Attributes;
 import com.socyno.stateform.abs.AbstractStateForm;
-import com.socyno.stateform.model.SystemTenantDbInfo.FieldOptionsName;
+import com.socyno.webbsc.model.SystemTenantDbInfo.FieldOptionsName;
 
 import lombok.Getter;
 import lombok.Setter;

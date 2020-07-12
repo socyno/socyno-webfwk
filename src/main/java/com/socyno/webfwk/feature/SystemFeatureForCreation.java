@@ -6,7 +6,7 @@ import com.github.reinert.jjschema.Attributes;
 import com.socyno.base.bscfield.FieldText;
 import com.socyno.stateform.abs.AbstractStateForm;
 import com.socyno.stateform.field.FieldSystemAuths;
-import com.socyno.stateform.field.OptionSystemAuth;
+import com.socyno.webbsc.authority.AuthorityEntity;
 
 import lombok.Data;
 
@@ -29,5 +29,5 @@ public class SystemFeatureForCreation implements AbstractStateForm {
     private String description;
     
     @Attributes(title = "接口/操作", position = 1300, type = FieldSystemAuths.class)
-    private List<OptionSystemAuth> auths;
+    private List<AuthorityEntity> auths;
 }

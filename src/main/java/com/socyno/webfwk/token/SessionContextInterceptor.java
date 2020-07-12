@@ -26,7 +26,7 @@ public class SessionContextInterceptor extends AbstractSessionInterceptor {
     
     @Override
     protected AbstractUser getAbstractUser(String username) throws Exception {
-            return SystemUserService.getInstance().getSimple(username);
+        return SystemUserService.getInstance().getSimple(username);
     }
     
     @Override

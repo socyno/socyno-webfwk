@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.github.reinert.jjschema.Attributes;
 import com.socyno.stateform.field.FieldSystemAuths;
-import com.socyno.stateform.field.OptionSystemAuth;
+import com.socyno.webbsc.authority.AuthorityEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -17,6 +17,6 @@ import lombok.ToString;
 public class SystemFeatureDetail extends SystemFeatureSimple implements SystemFeatureWithAuths {
     
     @Attributes(title = "接口/操作", type = FieldSystemAuths.class)
-    private List<OptionSystemAuth> auths;
+    private List<AuthorityEntity> auths;
         
 }

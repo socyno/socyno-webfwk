@@ -2,12 +2,12 @@ package com.socyno.webfwk.menu;
 
 import java.util.List;
 
-import com.socyno.stateform.field.OptionSystemAuth;
+import com.socyno.webbsc.authority.AuthorityEntity;
 
 public interface SystemMenuWithAuths {
     
-    public List<OptionSystemAuth> getAuths();
+    public List<AuthorityEntity> getAuths();
     
-    public void setAuths(List<OptionSystemAuth> auths);
+    public void setAuths(List<AuthorityEntity> auths);
     
 }

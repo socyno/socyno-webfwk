@@ -2,7 +2,7 @@ package com.socyno.webfwk.tenant;
 
 import java.util.List;
 
-import com.socyno.stateform.model.SystemTenantDbInfoWithId;
+import com.socyno.webbsc.model.SystemTenantDbInfoWithId;
 
 public interface SystemTenantWithDbInfos {
     

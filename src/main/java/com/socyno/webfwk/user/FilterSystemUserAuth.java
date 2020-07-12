@@ -8,7 +8,7 @@ import com.github.reinert.jjschema.Attributes;
 import com.github.reinert.jjschema.v1.FieldOptionsFilter;
 import com.github.reinert.jjschema.v1.FieldSimpleOption;
 import com.github.reinert.jjschema.v1.FieldType;
-import com.socyno.stateform.authority.AuthorityScopeType;
+import com.socyno.webbsc.authority.AuthorityScope;
 import com.socyno.webfwk.role.FieldSystemRole;
 
 import lombok.Getter;
@@ -28,11 +28,11 @@ public class FilterSystemUserAuth implements FieldOptionsFilter {
         @SuppressWarnings("serial")
         private final static List<FieldSimpleOption> options = new ArrayList<FieldSimpleOption>() {
             {
-                for (AuthorityScopeType v : AuthorityScopeType.values()) {
-                    if (AuthorityScopeType.Guest.equals(v)) {
+                for (AuthorityScope v : SystemUserService.getInstance().getPermissionService().getAllAuthorityScopes()) {
+                    if (v.isGuest()) {
                         continue;
                     }
-                    add(FieldSimpleOption.create(v.name(), v.getDisplay()));
+                    add(FieldSimpleOption.create(v.getName(), v.getDisplay()));
                 }
             }
         };

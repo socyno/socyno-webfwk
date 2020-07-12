@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.github.reinert.jjschema.Attributes;
 import com.socyno.stateform.field.FieldSystemAuths;
-import com.socyno.stateform.field.OptionSystemAuth;
+import com.socyno.webbsc.authority.AuthorityEntity;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -20,5 +20,5 @@ public class SystemMenuDetail extends SystemMenuSimple implements SystemMenuWith
     private SystemMenuDirOption menuDir;
     
     @Attributes(title = "授权明细", type = FieldSystemAuths.class)
-    private List<OptionSystemAuth> auths;
+    private List<AuthorityEntity> auths;
 }
