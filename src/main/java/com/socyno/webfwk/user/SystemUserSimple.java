@@ -35,7 +35,7 @@ public class SystemUserSimple implements AbstractUser, AbstractStateForm {
     private String  department;
     
     @Attributes(title = "直属领导")
-    private Long  manager;
+    private OptionSystemUser manager;
     
     @Attributes(title = "创建时间")
     private Date  createdAt;

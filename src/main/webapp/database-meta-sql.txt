@@ -358,6 +358,15 @@ CREATE TABLE IF NOT EXISTS `system_form_defined` (
 ) ENGINE = INNODB DEFAULT CHARSET = UTF8;
 
 -- ===========================================
+-- 通用流程显示名称定义
+-- 
+CREATE TABLE IF NOT EXISTS `system_form_customized_display` (
+    `display_key` VARCHAR ( 64 ) NOT NULL,
+    `display_text` VARCHAR ( 128 ) NOT NULL,
+    PRIMARY KEY ( `display_key` )
+) ENGINE = INNODB DEFAULT CHARSET = UTF8;
+
+-- ===========================================
 -- 通用流程界面视图配置
 --
 CREATE TABLE IF NOT EXISTS `system_form_viewattrs` (

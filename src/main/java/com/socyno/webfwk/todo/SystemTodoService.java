@@ -39,7 +39,7 @@ import com.socyno.stateform.util.StateFormQueryBaseEnum;
 import com.socyno.stateform.util.StateFormStateBaseEnum;
 import com.socyno.webbsc.ctxutil.ContextUtil;
 import com.socyno.webbsc.service.jdbc.TenantSpecialDataSource;
-import com.socyno.webfwk.user.SystemUserOption;
+import com.socyno.webfwk.user.OptionSystemUser;
 import com.socyno.webfwk.user.SystemUserSecurityOnly;
 import com.socyno.webfwk.user.SystemUserService;
 
@@ -84,6 +84,13 @@ public class SystemTodoService extends AbstractStateFormServiceWithBaseDao<Syste
         
         public EventCreate() {
             super("添加", STATES.OPENED.getCode());
+        }
+        
+        /**
+         * 允许创建事件的并发执行
+         */
+        public boolean getStateRevisionChangeIgnored() throws Exception {
+            return true;
         }
         
         @Override
@@ -342,13 +349,13 @@ public class SystemTodoService extends AbstractStateFormServiceWithBaseDao<Syste
         return getForm(SystemTodoDetail.class, id);
     }
     
-    private void setAssignee(long formId, List<SystemUserOption> assignees) throws Exception {
+    private void setAssignee(long formId, List<OptionSystemUser> assignees) throws Exception {
         if (assignees == null) {
             return;
         }
         getFormBaseDao().executeUpdate(SqlQueryUtil.prepareDeleteQuery(
                 "system_common_todo_assignee", new ObjectMap().put("=todo_id", formId)));
-        for (SystemUserOption user : assignees) {
+        for (OptionSystemUser user : assignees) {
             if (user == null) {
                 continue;
             }
@@ -392,10 +399,12 @@ public class SystemTodoService extends AbstractStateFormServiceWithBaseDao<Syste
         allUserIds.add(originForm.getApplyUserId());
         allUserIds.add(originForm.getClosedUserId());
         allUserIds.add(originForm.getCreatedUserId());
-        List<SystemUserOption> assignees;
+        List<OptionSystemUser> assignees;
+        Set<Long> allAssigneeIds = new HashSet<>();
         if ((assignees = originForm.getAssignees()) != null) {
-            for (SystemUserOption o : assignees) {
+            for (OptionSystemUser o : assignees) {
                 allUserIds.add(o.getId());
+                allAssigneeIds.add(o.getId());
             }
         }
         List<SystemUserSecurityOnly> usersSecurity = SystemUserService.getInstance().getUsersSecurity(
@@ -405,11 +414,15 @@ public class SystemTodoService extends AbstractStateFormServiceWithBaseDao<Syste
             allNotifyInfos.put(u.getId(), u);
             
         }
-        TodoNotifyInfo result =  new TodoNotifyInfo()
-                .setCloserNotifyInfo(allNotifyInfos.remove(originForm.getClosedUserId()))
-                .setCreatorNotifyInfo(allNotifyInfos.remove(originForm.getCreatedUserId()))
-                .setApplierNotifyInfo(allNotifyInfos.remove(originForm.getApplyUserId()));
-
+        TodoNotifyInfo result = new TodoNotifyInfo()
+                .setApplierNotifyInfo(allNotifyInfos.get(originForm.getApplyUserId()))
+                .setCloserNotifyInfo(allNotifyInfos.get(originForm.getClosedUserId()))
+                .setCreatorNotifyInfo(allNotifyInfos.get(originForm.getCreatedUserId()));
+        for (Object userId : allNotifyInfos.keySet().toArray()) {
+            if (!allAssigneeIds.contains(userId)) {
+                allNotifyInfos.remove(userId);
+            }
+        }
         return result.setAssigneeNotifyInfos(allNotifyInfos.values());
     }
 }

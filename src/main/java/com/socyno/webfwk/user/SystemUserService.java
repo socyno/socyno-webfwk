@@ -19,6 +19,7 @@ import com.socyno.stateform.abs.AbstractStateAction;
 import com.socyno.stateform.abs.AbstractStateCreateAction;
 import com.socyno.stateform.abs.AbstractStateFormServiceWithBaseDao;
 import com.socyno.stateform.abs.BasicStateForm;
+import com.socyno.stateform.sugger.DefaultStateFormSugger;
 import com.socyno.webbsc.authority.Authority;
 import com.socyno.webbsc.authority.AuthorityScopeType;
 import com.socyno.webbsc.authority.AuthoritySpecialChecker;
@@ -47,6 +48,13 @@ public class SystemUserService extends AbstractStateFormServiceWithBaseDao<Syste
     
     @Getter
     private static final SystemUserService instance = new SystemUserService();
+    
+    static {
+        DefaultStateFormSugger.addFieldDefinitions(
+                new SuggerSystemUser(),
+                new SuggerSystemUsername(),
+                new SuggerSystemUserGrantedAuth());
+    }
     
     private SystemUserService() {
         setStates(STATES.values());
@@ -144,6 +152,20 @@ public class SystemUserService extends AbstractStateFormServiceWithBaseDao<Syste
             this.namedQuery = namedQuery;
         }
     }
+
+    public List<SystemUserSecurityOnly> getUsersSecurity(Object[] userIds) throws Exception {
+        if (userIds == null || userIds.length <= 0) {
+            return Collections.emptyList();
+        }
+        return getUsersSecurity(ConvertUtil.asNonNullUniqueLongArray(userIds));
+    }
+    
+    public List<SystemUserSecurityOnly> getUsersSecurity(Collection<?> userIds) throws Exception {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return getUsersSecurity(ConvertUtil.asNonNullUniqueLongArray(userIds.toArray()));
+    }
     
     public List<SystemUserSecurityOnly> getUsersSecurity(Long... userIds) throws Exception {
         if (userIds == null || userIds.length <= 0
@@ -197,67 +219,7 @@ public class SystemUserService extends AbstractStateFormServiceWithBaseDao<Syste
     
     @Override
     protected void fillExtraFormFields(Collection<? extends SystemUserSimple> forms) throws Exception {
-        
-        if (forms == null || forms.size() <= 0) {
-            return;
-        }
-        Map<Long, List<SystemUserWithAuths>> withAuths = new HashMap<>();
-        Map<Long, List<SystemUserWithManagerEntity>> withManager = new HashMap<>();
-        for (SystemUserSimple user : forms) {
-            if (user == null) {
-                continue;
-            }
-            List<SystemUserWithAuths> authsList;
-            if (SystemUserWithAuths.class.isAssignableFrom(user.getClass())) {
-                if ((authsList = withAuths.get(user.getId())) == null ) {
-                    withAuths.put(user.getId(), authsList = new ArrayList<>());
-                }
-                authsList.add((SystemUserWithAuths)user);
-            }
-            List<SystemUserWithManagerEntity> managerList;
-            if (SystemUserWithManagerEntity.class.isAssignableFrom(user.getClass())
-                    && user.getManager() != null) {
-                if ((managerList = withManager.get(user.getManager())) == null ) {
-                    withManager.put(user.getManager(), managerList = new ArrayList<>());
-                }
-                managerList.add((SystemUserWithManagerEntity)user);
-            }
-        }
-        
-        if (withAuths.size() > 0) {
-            List<OptionSystemUserAuth> optionAuths = FieldSystemUserAuth.getInstance()
-                    .queryByUserIds(withAuths.keySet().toArray(new Long[0]));
-            Map<Long, List<OptionSystemUserAuth>> allOptionAuths = new HashMap<>();
-            List<OptionSystemUserAuth> userOptionAuths;
-            for (OptionSystemUserAuth option : optionAuths) {
-                if ((userOptionAuths = allOptionAuths.get(option.getUserId())) == null) {
-                    allOptionAuths.put(option.getUserId(), userOptionAuths = new ArrayList<>());
-                }
-                userOptionAuths.add(option);
-            }
-            for (Map.Entry<Long, List<SystemUserWithAuths>> entry : withAuths.entrySet()) {
-                Long userId = entry.getKey();
-                for (SystemUserWithAuths with : entry.getValue()) {
-                    with.setSystemAuths(allOptionAuths.get(userId));
-                }
-            }
-        }
-        
-        if (withManager.size() > 0) {
-            List<SystemUserOption> optionManagers = FieldSystemUser.getInstance()
-                    .queryDynamicValues(withManager.keySet().toArray());
-            if (optionManagers != null && optionManagers.size() > 0) {
-                Map<Long, SystemUserOption> mappedManagers = new HashMap<>();
-                for (SystemUserOption o : optionManagers) {
-                    mappedManagers.put(o.getId(), o);
-                }
-                for (List<SystemUserWithManagerEntity> users : withManager.values()) {
-                    for (SystemUserWithManagerEntity with : users) {
-                        with.setManagerEntity(mappedManagers.get(((SystemUserSimple) with).getManager()));
-                    }
-                }
-            }
-        }
+        DefaultStateFormSugger.getInstance().apply(forms);
     }
     
     public class CurrentUserIsMeChecker implements AuthoritySpecialChecker {

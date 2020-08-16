@@ -22,17 +22,17 @@ public class FieldSystemUser extends FieldAbstractKeyword<FilterBasicKeyword> {
     }
     
     @Override
-    public List<SystemUserOption> queryDynamicOptions(FilterBasicKeyword filter) throws Exception {
+    public List<OptionSystemUser> queryDynamicOptions(FilterBasicKeyword filter) throws Exception {
         return SystemUserService.getInstance()
-                .queryByNameLike(SystemUserOption.class, filter.getKeyword(), false, 1L, 50).getList();
+                .queryByNameLike(OptionSystemUser.class, filter.getKeyword(), false, 1L, 50).getList();
     }
     
     @Override
-    public List<SystemUserOption> queryDynamicValues(Object[] values) throws Exception {
-        long[] userIds = ConvertUtil.asNonNullUniquePrimitiveLongArray(values);
+    public List<OptionSystemUser> queryDynamicValues(Object[] opvalues) throws Exception {
+        long[] userIds = ConvertUtil.asNonNullUniquePrimitiveLongArray(opvalues);
         if (userIds == null || userIds.length <= 0) {
             return Collections.emptyList();
         }
-        return SystemUserService.getInstance().queryByUserIds(SystemUserOption.class, userIds);
+        return SystemUserService.getInstance().queryByUserIds(OptionSystemUser.class, userIds);
     }
 }

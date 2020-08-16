@@ -5,7 +5,7 @@ import java.util.List;
 import com.github.reinert.jjschema.Attributes;
 import com.socyno.stateform.abs.BasicStateForm;
 import com.socyno.webfwk.user.FieldSystemUser;
-import com.socyno.webfwk.user.SystemUserOption;
+import com.socyno.webfwk.user.OptionSystemUser;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -33,8 +33,8 @@ public class SystemTodoForCreation extends BasicStateForm {
     private String targetPage;
     
     @Attributes(title = "流程发起人", type = FieldSystemUser.class)
-    private SystemUserOption applyUser;
+    private OptionSystemUser applyUser;
     
     @Attributes(title = "审批人清单", required = true, type = FieldSystemUser.class)
-    private List<SystemUserOption> assignee;
+    private List<OptionSystemUser> assignee;
 }

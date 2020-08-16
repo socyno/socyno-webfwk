@@ -36,6 +36,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.mail.internet.MimeUtility;
+
 @Slf4j
 public class SystemNotifyRecordService extends AbstractStateFormServiceWithBaseDao<SystemNotifyRecordSimple> {
     
@@ -97,6 +99,13 @@ public class SystemNotifyRecordService extends AbstractStateFormServiceWithBaseD
         @Authority(value = AuthorityScopeType.System)
         public void check(String event, SystemNotifyRecordSimple form, String sourceState) {
             
+        }
+        
+        /**
+         * 允许创建事件的并发执行
+         */
+        public boolean getStateRevisionChangeIgnored() throws Exception {
+            return true;
         }
         
         @Override
@@ -275,7 +284,9 @@ public class SystemNotifyRecordService extends AbstractStateFormServiceWithBaseD
                     if (subjectIndex > 80) {
                         subjectIndex = 80;
                     }
-                    mailEntity.setSubject(body.substring(0, subjectIndex));
+
+                    /* 使用 MimeUtility.encodeWord 可避免outlook标题显示乱码的问题 */
+                    mailEntity.setSubject(MimeUtility.encodeWord(body.substring(0, subjectIndex), "UTF-8", "Q"));
                     
                     String[] addressesTo = StringUtils.split(String.format("%s,%s",
                         StringUtils.trimToEmpty(originForm.getMessageTo()),

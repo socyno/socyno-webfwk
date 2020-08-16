@@ -14,8 +14,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @Attributes(title = "系统用户详情")
-public class SystemUserDetail extends SystemUserSimple implements SystemUserWithSecurities,
-                        SystemUserWithAuths, SystemUserWithManagerEntity {
+public class SystemUserDetail extends SystemUserSimple implements SystemUserWithSecurities {
     public static class FieldOptionsState extends FieldType {
         public List<? extends FieldOption> getStaticOptions() {
             return SystemUserService.getInstance().getStates();
@@ -34,9 +33,6 @@ public class SystemUserDetail extends SystemUserSimple implements SystemUserWith
     
     @Attributes(title = "座机", position = 3300)
     private String telphone;
-    
-    @Attributes(title = "直属领导", position = 3400, type = FieldSystemUser.class)
-    private SystemUserOption managerEntity;
 
     @Attributes(title = "授权", position = 3500, type = FieldSystemUserAuth.class)
     private List<OptionSystemUserAuth> systemAuths;

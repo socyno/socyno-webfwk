@@ -2,12 +2,12 @@ package com.socyno.webfwk.todo;
 
 import java.util.List;
 
-import com.socyno.webfwk.user.SystemUserOption;
+import com.socyno.webfwk.user.OptionSystemUser;
 
 public interface SystemTodoWithAssingees {
     
-    public List<SystemUserOption> getAssignees();
+    public List<OptionSystemUser> getAssignees();
     
-    public void setAssignees(List<SystemUserOption> assignees);
+    public void setAssignees(List<OptionSystemUser> assignees);
     
 }

@@ -4,7 +4,7 @@ import java.util.List;
 
 import com.github.reinert.jjschema.Attributes;
 import com.socyno.webfwk.user.FieldSystemUser;
-import com.socyno.webfwk.user.SystemUserOption;
+import com.socyno.webfwk.user.OptionSystemUser;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -17,5 +17,5 @@ import lombok.ToString;
 public class SystemTodoDetail extends SystemTodoSimple implements SystemTodoWithAssingees {
     
     @Attributes(title = "审批人清单", type = FieldSystemUser.class)
-    private List<SystemUserOption> assignees;
+    private List<OptionSystemUser> assignees;
 }

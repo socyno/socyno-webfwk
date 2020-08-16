@@ -35,6 +35,6 @@ public class SystemUserForEdition extends BasicStateForm {
     private String  department;
     
     @Attributes(title = "直属领导", position = 1080, type = FieldSystemUser.class)
-    private SystemUserOption managerEntity;
+    private OptionSystemUser managerEntity;
     
 }

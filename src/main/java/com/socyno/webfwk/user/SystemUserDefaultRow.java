@@ -8,9 +8,6 @@ import lombok.Setter;
 @Getter
 @Setter
 @Attributes(title = "系统用户清单")
-public class SystemUserDefaultRow extends SystemUserSimple implements SystemUserWithManagerEntity {
-    
-    @Attributes(title = "直属领导", type = FieldSystemUser.class)
-    private SystemUserOption managerEntity;
+public class SystemUserDefaultRow extends SystemUserSimple {
     
 }
